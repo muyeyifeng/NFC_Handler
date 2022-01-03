@@ -1,56 +1,32 @@
 package com.example.nfc_handler;
 
-import android.annotation.SuppressLint;
 import android.app.PendingIntent;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
 import android.nfc.tech.MifareClassic;
-import android.nfc.tech.NfcA;
-import android.nfc.tech.NfcB;
-import android.nfc.tech.NfcF;
-import android.nfc.tech.NfcV;
-import android.os.Build;
 import android.os.Bundle;
 import android.text.method.ScrollingMovementMethod;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 
-@RequiresApi(api = Build.VERSION_CODES.S)
 public class MainActivity extends AppCompatActivity {
-    private Toast toast;
     private TextView textView;
-    private PendingIntent pendingIntent = PendingIntent.getActivity(this, 0,
-            new Intent(this, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), PendingIntent.FLAG_MUTABLE);
-    private IntentFilter[] intentFiltersArray;
-    private String[][] techListsArray;
+    private PendingIntent pendingIntent;
     private NfcAdapter nfcAdapter;
 
-    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        pendingIntent = PendingIntent.getActivity(this, 0,
+                new Intent(this, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), PendingIntent.FLAG_MUTABLE);
         textView=(TextView)findViewById(R.id.textView);
         textView.setMovementMethod(ScrollingMovementMethod.getInstance());
         nfcAdapter = NfcAdapter.getDefaultAdapter(this);
-
-        if(nfcAdapter ==null){
-            toast=Toast.makeText(this,"Unsupported NFC.",Toast.LENGTH_LONG);
-        }
-        if(!nfcAdapter.isEnabled()){
-            toast=Toast.makeText(this,"Disabled NFC.",Toast.LENGTH_LONG);
-        }
     }
 
-    @SuppressLint("SetTextI18n")
     @Override
     public void onNewIntent(Intent intent){
         super.onNewIntent(intent);
