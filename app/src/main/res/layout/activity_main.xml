@@ -10,9 +10,21 @@
         android:id="@+id/textView"
         android:layout_width="378dp"
         android:layout_height="435dp"
-        android:layout_marginTop="36dp"
+        android:layout_marginTop="256dp"
         android:scrollbars="vertical"
         android:text="@string/textView_text"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.515"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/techSupport"
+        android:layout_width="296dp"
+        android:layout_height="175dp"
+        android:scrollbars="vertical"
+        android:text=""
+        app:layout_constraintBottom_toTopOf="@+id/textView"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
