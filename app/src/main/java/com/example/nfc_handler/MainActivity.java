@@ -4,9 +4,11 @@ import android.app.PendingIntent;
 import android.content.Intent;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.method.ScrollingMovementMethod;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -27,7 +29,8 @@ public class MainActivity extends AppCompatActivity {
             "android.nfc.tech.NfcF",
             "android.nfc.tech.NfcV"
     };
-    Handler handler = new Handler();
+    private final Handler handler = new Handler();
+    private Button button;
     private TextView textView, techSupport;
     private PendingIntent pendingIntent;
     private NfcAdapter nfcAdapter;
@@ -39,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
             //要做的事情，这里再次调用此Runnable对象，以实现每两秒实现一次的定时器操作
             System.out.println(tech);
             String readData = readNfc(tech, tag);
-            if (readData == null || readData == "null") {
+            if (readData == null || readData.equals("null")) {
                 System.out.println("null");
                 handler.removeCallbacks(runnable);
                 return;
@@ -54,12 +57,25 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         nfcAdapter = NfcAdapter.getDefaultAdapter(this);
-        pendingIntent = PendingIntent.getActivity(this, 0,
-                new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), PendingIntent.FLAG_MUTABLE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            pendingIntent = PendingIntent.getActivity(this, 0,
+                    new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), PendingIntent.FLAG_MUTABLE);
+        } else {
+            pendingIntent = PendingIntent.getActivity(this, 0,
+                    new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
+        }
+
         textView = findViewById(R.id.textView);
         textView.setMovementMethod(ScrollingMovementMethod.getInstance());
+
         techSupport = findViewById(R.id.techSupport);
         techSupport.setMovementMethod(ScrollingMovementMethod.getInstance());
+
+        button = findViewById(R.id.clear_text);
+        button.setOnClickListener(view -> {
+            textView.setText("");
+            techSupport.setText("");
+        });
 
     }
 
@@ -87,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
                     textView.setText("");
                     tag = newtag;
                 } else {
-                    System.out.println(oldId+'\t'+newId);
+                    System.out.println(oldId + '\t' + newId);
                     System.out.println("Same Card.");
                 }
             } else {
@@ -147,7 +163,7 @@ public class MainActivity extends AppCompatActivity {
     private void processIntent(Tag tag) {
         String[] techlist = tag.getTechList();
         StringBuilder stringBuilder = new StringBuilder(NfcReader.readId(tag.getId()));
-        stringBuilder.insert(0,"ID: ").append('\n');
+        stringBuilder.insert(0, "ID: ").append('\n');
         for (String techspt : techlist) {
             stringBuilder.append(techspt).append('\n');
         }

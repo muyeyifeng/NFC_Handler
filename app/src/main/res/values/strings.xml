@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">NFC_Handler</string>
     <string name="textView_text">Null</string>
+    <string name="clear">Clear</string>
 </resources>

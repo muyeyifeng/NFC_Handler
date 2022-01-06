@@ -17,7 +17,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.NFC_Handler">
         <activity
-            android:name=".MainActivity"
+            android:name="com.example.nfc_handler.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

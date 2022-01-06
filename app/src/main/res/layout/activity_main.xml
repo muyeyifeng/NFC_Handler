@@ -9,10 +9,11 @@
     <TextView
         android:id="@+id/textView"
         android:layout_width="378dp"
-        android:layout_height="435dp"
+        android:layout_height="330dp"
         android:layout_marginTop="256dp"
+        android:scrollbarStyle="outsideOverlay"
         android:scrollbars="vertical"
-        android:text="@string/textView_text"
+        android:text=""
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.515"
         app:layout_constraintStart_toStartOf="parent"
@@ -22,10 +23,21 @@
         android:id="@+id/techSupport"
         android:layout_width="296dp"
         android:layout_height="175dp"
+        android:scrollbarStyle="outsideOverlay"
         android:scrollbars="vertical"
         android:text=""
         app:layout_constraintBottom_toTopOf="@+id/textView"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/clear_text"
+        android:text="@string/clear"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView" />
 </androidx.constraintlayout.widget.ConstraintLayout>
