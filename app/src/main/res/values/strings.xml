@@ -2,4 +2,12 @@
     <string name="app_name">NFC_Handler</string>
     <string name="textView_text">Null</string>
     <string name="clear">Clear</string>
+    <string name="nimtelogo">NIMTElogo</string>
+    <string name="skip">skip</string>
+    <string name="nullTemperature">--</string>
+    <string name="temperatureLable">Temperature:</string>
+    <string name="raw_measurements">RAW MEASUREMENTS</string>
+    <string name="stop">Stop</string>
+    <string name="start">Start</string>
+    <string name="smart_system">Smart System</string>
 </resources>

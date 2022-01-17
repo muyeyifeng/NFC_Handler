@@ -14,8 +14,7 @@ public class NfcVUtil {
         cmd[1] = (byte) 0x2B; // command
         byte[] ID = mNfcV.getTag().getId();
         System.arraycopy(ID, 0, cmd, 2, ID.length); // UID
-        byte[] infoRmation = mNfcV.transceive(cmd);
-        return infoRmation;
+        return mNfcV.transceive(cmd);
     }
 
 
@@ -30,7 +29,7 @@ public class NfcVUtil {
         byte[] cmd = new byte[11];
         cmd[0] = (byte) 0x22;
         cmd[1] = (byte) 0x20;
-        byte[] ID= mNfcV.getTag().getId();
+        byte[] ID = mNfcV.getTag().getId();
         System.arraycopy(ID, 0, cmd, 2, ID.length); // UID
         cmd[10] = (byte) position;
         byte[] res = mNfcV.transceive(cmd);
@@ -57,7 +56,7 @@ public class NfcVUtil {
             count = blockNumber - begin;
         }
         */
-        StringBuffer data = new StringBuffer();
+        StringBuilder data = new StringBuilder();
         for (int i = begin; i < count + begin; i++) {
             data.append(readOneBlock(mNfcV, i));
         }
@@ -73,11 +72,11 @@ public class NfcVUtil {
      * @return false为写入失败，true为写入成功
      * @throws IOException
      */
-    public static boolean writeBlock(NfcV mNfcV,int position, byte[] data) throws IOException {
+    public static boolean writeBlock(NfcV mNfcV, int position, byte[] data) throws IOException {
         byte[] cmd = new byte[15];
         cmd[0] = (byte) 0x22;
         cmd[1] = (byte) 0x21;
-        byte[] ID= mNfcV.getTag().getId();
+        byte[] ID = mNfcV.getTag().getId();
         System.arraycopy(ID, 0, cmd, 2, ID.length); // UID
         //block
         cmd[10] = (byte) 0x02;

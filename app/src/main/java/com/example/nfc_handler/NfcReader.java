@@ -130,7 +130,9 @@ public class NfcReader extends StringHandler {
             int oneBlockSize = infoRmation[13] + 1;
             String AFI = StringHandler.readId(new byte[]{infoRmation[11]});
             String DSFID = StringHandler.readId(new byte[]{infoRmation[10]});
-            String readData=NfcVUtil.readBlocks(mNfcV, 0, blockNumber);
+            String readData = NfcVUtil.readBlocks(mNfcV, 0, blockNumber);
+            //System.out.println(readData);
+            //System.out.println(StringHandler.hexToUtf8(readData));
             mNfcV.close();
             return readData;
         } catch (Exception e) {
@@ -142,11 +144,11 @@ public class NfcReader extends StringHandler {
                 }
             }
         }
-        System.out.println(mNfcV.isConnected());
+        //System.out.println(mNfcV.isConnected());
         return null;
     }
 
-    ////读取 NDEF 类卡片--目前仅限txt文本
+    ////读取 NDEF 类卡片--目前0位置文本
     public static String readNdef(Tag tag) {
         Ndef ndef = Ndef.get(tag);
         try {

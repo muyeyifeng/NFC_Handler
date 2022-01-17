@@ -4,40 +4,238 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#FFFFFFFF"
     tools:context=".MainActivity">
 
+
     <TextView
-        android:id="@+id/textView"
-        android:layout_width="378dp"
-        android:layout_height="330dp"
-        android:layout_marginTop="256dp"
-        android:scrollbarStyle="outsideOverlay"
-        android:scrollbars="vertical"
-        android:text=""
+        android:id="@+id/topic1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:background="#1997D1"
+        android:fontFamily="sans-serif-light"
+        android:text="@string/smart_system"
+        android:textAlignment="center"
+        android:textColor="#FFFFFF"
+        android:textSize="34sp"
+        android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.515"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
-        android:id="@+id/techSupport"
-        android:layout_width="296dp"
-        android:layout_height="175dp"
-        android:scrollbarStyle="outsideOverlay"
-        android:scrollbars="vertical"
-        android:text=""
-        app:layout_constraintBottom_toTopOf="@+id/textView"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
-        android:id="@+id/clear_text"
-        android:text="@string/clear"
+    <TableRow
+        android:id="@+id/tableRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:weightSum="2"
+        app:layout_constraintTop_toBottomOf="@+id/topic1"
+        tools:layout_editor_absoluteX="0dp">
+
+        <Button
+            android:id="@+id/start"
+            style="?android:attr/buttonBarButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="50dp"
+            android:layout_marginEnd="30dp"
+            android:layout_weight="1"
+            android:background="#2556EA"
+            android:fontFamily="sans-serif-light"
+            android:text="@string/start"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFFFF"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="parent" />
+
+        <Button
+            android:id="@+id/stop"
+            style="?android:attr/buttonBarButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="30dp"
+            android:layout_marginEnd="50dp"
+            android:layout_weight="1"
+            android:background="#FF0000"
+            android:backgroundTint="@null"
+            android:fontFamily="sans-serif-light"
+            android:text="@string/stop"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFFFF"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/topic1" />
+    </TableRow>
+
+    <TextView
+        android:id="@+id/labelText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:fontFamily="sans-serif-light"
+        android:text="@string/raw_measurements"
+        android:textAlignment="center"
+        android:textColor="#000000"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        app:layout_constraintTop_toBottomOf="@+id/tableRow"
+        tools:layout_editor_absoluteX="126dp" />
+
+    <TextView
+        android:id="@+id/labelText1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginTop="10dp"
+        android:layout_marginEnd="100dp"
+        android:fontFamily="sans-serif-black"
+        android:text="@string/temperatureLable"
+        android:textAlignment="center"
+        android:textColor="#000000"
+        android:textSize="34sp"
+        android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView" />
+        app:layout_constraintTop_toBottomOf="@+id/labelText" />
+
+    <TextView
+        android:id="@+id/temperature"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="30dp"
+        android:layout_marginTop="10dp"
+        android:fontFamily="sans-serif-black"
+        android:text="@string/nullTemperature"
+        android:textColor="#000000"
+        android:textSize="34sp"
+        app:layout_constraintStart_toEndOf="@+id/labelText1"
+        app:layout_constraintTop_toBottomOf="@+id/labelText" />
+
+    <Button
+        android:id="@+id/changePage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="60dp"
+        android:layout_marginBottom="60dp"
+        android:text="@string/skip"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <TextView
+        android:id="@+id/bar1"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:layout_marginStart="3dp"
+        android:layout_marginEnd="3dp"
+        android:background="#2196F3"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/labelText1" />
+
+    <TextView
+        android:id="@+id/bar"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:layout_marginStart="3dp"
+        android:layout_marginEnd="3dp"
+        android:background="#2196F3"
+        app:layout_constraintBottom_toTopOf="@+id/bar2"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/bar1" />
+
+    <TextView
+        android:id="@+id/bar2"
+        android:layout_width="match_parent"
+        android:layout_height="4dp"
+        android:layout_marginStart="3dp"
+        android:layout_marginEnd="3dp"
+        android:layout_marginBottom="80dp"
+        android:background="#2196F3"
+        app:layout_constraintBottom_toBottomOf="@+id/NIMTElogo"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageView
+        android:id="@+id/NIMTElogo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/nimtelogo"
+        android:scaleType="fitEnd"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:srcCompat="@drawable/cnimte_hd" />
+
+    <com.androidplot.xy.XYPlot
+        android:id="@+id/plot1"
+        style="@style/APDefacto.Light"
+        android:layout_width="390dp"
+        android:layout_height="200dp"
+        app:backgroundColor="#FFFFFF"
+        app:domainStepMode="subdivide"
+        app:graphAnchor="center"
+        app:graphHeight="230dp"
+        app:graphHeightMode="absolute"
+        app:graphHorizontalPosition="10dp"
+        app:graphHorizontalPositioning="absolute_from_center"
+        app:graphVerticalPosition="20dp"
+        app:graphVerticalPositioning="absolute_from_center"
+        app:graphWidth="0.98"
+        app:graphWidthMode="relative"
+        app:gridBackgroundColor="#FFFFFF"
+        app:layout_constraintBottom_toTopOf="@+id/bar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/bar1"
+        app:legendIconHeight="0dp"
+        app:legendTextSize="0dp"
+        app:lineLabelRotationBottom="-45"
+        app:lineLabels="left|bottom"
+        app:rangeStepMode="subdivide"
+        app:rangeTitle="range"
+        app:rangeTitleTextSize="20dp"
+        app:renderMode="use_background_thread"
+        app:title="RealTime Data 1"
+        app:titleTextColor="#000000" />
+
+    <com.androidplot.xy.XYPlot
+        android:id="@+id/plot2"
+        style="@style/APDefacto.Light"
+        android:layout_width="390dp"
+        android:layout_height="200dp"
+        app:backgroundColor="#FFFFFF"
+        app:domainStepMode="subdivide"
+        app:graphAnchor="center"
+        app:graphHeight="230dp"
+        app:graphHeightMode="absolute"
+        app:graphHorizontalPosition="10dp"
+        app:graphHorizontalPositioning="absolute_from_center"
+        app:graphVerticalPosition="20dp"
+        app:graphVerticalPositioning="absolute_from_center"
+        app:graphWidth="0.98"
+        app:graphWidthMode="relative"
+        app:gridBackgroundColor="#FFFFFF"
+        app:layout_constraintBottom_toTopOf="@+id/bar2"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/bar"
+        app:legendIconHeight="0dp"
+        app:legendTextSize="0dp"
+        app:lineLabelRotationBottom="-45"
+        app:lineLabels="left|bottom"
+        app:rangeStepMode="subdivide"
+        app:rangeTitle="range"
+        app:rangeTitleTextSize="20dp"
+        app:title="RealTime Data 2"
+        app:titleTextColor="#000000" />
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>
