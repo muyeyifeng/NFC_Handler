@@ -6,11 +6,13 @@ import android.nfc.Tag;
 import android.nfc.tech.MifareClassic;
 import android.nfc.tech.MifareUltralight;
 import android.nfc.tech.Ndef;
+import android.nfc.tech.NfcV;
 
 import java.io.IOException;
 
 public class NfcReader extends StringHandler {
 
+    //读取 MifareUltraight 类卡片--copy
     public static String readMifareUltralight(Tag tag) {
         MifareUltralight light = MifareUltralight.get(tag);
         StringBuilder stringBuilder = new StringBuilder();
@@ -30,6 +32,7 @@ public class NfcReader extends StringHandler {
         return null;
     }
 
+    //读取 MifareClassic 类卡片--copy
     public static String readMifareClassic(Tag tag) {
         boolean auth;
         MifareClassic mfc = MifareClassic.get(tag);
@@ -79,7 +82,7 @@ public class NfcReader extends StringHandler {
             mfc.close();
             return metaInfo.toString();
         } catch (Exception e) {
-            if(mfc.isConnected()){
+            if (mfc.isConnected()) {
                 try {
                     mfc.close();
                 } catch (IOException ioException) {
@@ -92,26 +95,58 @@ public class NfcReader extends StringHandler {
         return null;
     }
 
+    //读取 IsoDep 类卡片--copy
     public static String readIsoDep(Tag tag) {
         return null;
     }
 
+    //读取 NFC A 类卡片--EMPTY
     public static String readNfcA(Tag tag) {
         return null;
     }
 
+    //读取 NFC B 类卡片--EMPTY
     public static String readNfcB(Tag tag) {
         return null;
     }
 
+    //读取 NFC F 类卡片--EMPTY
     public static String readNfcF(Tag tag) {
         return null;
     }
 
+    //读取 NFC V 类卡片--EMPTY
+    //ISO 15693, NFC Forum Type 5 tag
     public static String readNfcV(Tag tag) {
+        NfcV mNfcV = NfcV.get(tag);
+        try {
+            //循环读取时如发生意外上次未断开，则关闭连接
+            if (mNfcV.isConnected()) {
+                mNfcV.close();
+            }
+            mNfcV.connect();
+            byte[] infoRmation = NfcVUtil.getInfoRmation(mNfcV);
+            int blockNumber = infoRmation[12] + 1;
+            int oneBlockSize = infoRmation[13] + 1;
+            String AFI = StringHandler.readId(new byte[]{infoRmation[11]});
+            String DSFID = StringHandler.readId(new byte[]{infoRmation[10]});
+            String readData=NfcVUtil.readBlocks(mNfcV, 0, blockNumber);
+            mNfcV.close();
+            return readData;
+        } catch (Exception e) {
+            if (mNfcV.isConnected()) {
+                try {
+                    mNfcV.close();
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                }
+            }
+        }
+        System.out.println(mNfcV.isConnected());
         return null;
     }
 
+    ////读取 NDEF 类卡片--目前仅限txt文本
     public static String readNdef(Tag tag) {
         Ndef ndef = Ndef.get(tag);
         try {
@@ -136,6 +171,7 @@ public class NfcReader extends StringHandler {
         }
     }
 
+    //读取 NdefFormatable 类卡片--EMPTY
     public static String readNdefFormatable(Tag tag) {
         return null;
     }

@@ -2,6 +2,7 @@ package com.example.nfc_handler;
 
 import android.nfc.NdefRecord;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
@@ -78,5 +79,26 @@ public class StringHandler {
         } catch (Exception e) {
             throw new IllegalArgumentException();
         }
+    }
+
+    public static String hexToUtf8(String hex){
+        int beginIndex=22;
+        String endSymbol="fe000000";
+        int endIndex=hex.indexOf(endSymbol);
+        hex=hex.substring(beginIndex,endIndex).replaceAll("(0)+$", "");
+        byte[] byteArr = new byte[hex.length()/2];
+        for(int i=0;i<hex.length()/2;i++){
+            String output=hex.substring(i*2,i*2+2);
+            Integer hexInt=Integer.decode("0x"+output);
+            byteArr[i]=hexInt.byteValue();
+        }
+        String finalString="";
+        try {
+            finalString=new String(byteArr,"utf-8");
+            //System.out.println(finalString);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        return  finalString;
     }
 }

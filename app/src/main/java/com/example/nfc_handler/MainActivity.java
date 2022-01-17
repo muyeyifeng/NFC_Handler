@@ -20,6 +20,7 @@ import java.util.Arrays;
 public class MainActivity extends AppCompatActivity {
     //nfc读写协议，按列表排序有限使用
     private final String[] nfcTechList = {
+            "android.nfc.tech.NfcV",
             "android.nfc.tech.Ndef",
             "android.nfc.tech.MifareClassic",
             "android.nfc.tech.MifareUltralight",
@@ -27,7 +28,6 @@ public class MainActivity extends AppCompatActivity {
             "android.nfc.tech.NfcA",
             "android.nfc.tech.NfcB",
             "android.nfc.tech.NfcF",
-            "android.nfc.tech.NfcV"
     };
     private final Handler handler = new Handler();
     private Button button;
@@ -39,7 +39,8 @@ public class MainActivity extends AppCompatActivity {
     Runnable runnable = new Runnable() {
         @Override
         public void run() {
-            //要做的事情，这里再次调用此Runnable对象，以实现每两秒实现一次的定时器操作
+            int refreshTime = 100;       //ms
+            //要做的事情，这里再次调用此Runnable对象，以实现定时器操作
             System.out.println(tech);
             String readData = readNfc(tech, tag);
             if (readData == null || readData.equals("null")) {
@@ -48,7 +49,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             textView.setText(textView.getText() + "\n" + readData);
-            handler.postDelayed(this, 100);
+            handler.postDelayed(this, refreshTime);
         }
     };
 
@@ -178,6 +179,7 @@ public class MainActivity extends AppCompatActivity {
                 decodeable = true;
                 userToast(tech);
                 readData = readNfc(tech, tag);
+                System.out.println(StringHandler.hexToUtf8(readData));
                 textView.setText(textView.getText() + "\n" + readData);
                 break;
             }
