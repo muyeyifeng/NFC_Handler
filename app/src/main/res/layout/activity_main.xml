@@ -12,7 +12,7 @@
         android:id="@+id/topic1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="0dp"
         android:background="#1997D1"
         android:fontFamily="sans-serif-light"
         android:text="@string/smart_system"

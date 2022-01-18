@@ -1,5 +1,6 @@
 package com.example.nfc_handler;
 
+import android.annotation.SuppressLint;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.graphics.Color;
@@ -15,33 +16,24 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.androidplot.util.Redrawer;
-import com.androidplot.xy.AdvancedLineAndPointRenderer;
 import com.androidplot.xy.BoundaryMode;
+import com.androidplot.xy.LineAndPointFormatter;
+import com.androidplot.xy.StepMode;
+import com.androidplot.xy.XYGraphWidget;
 import com.androidplot.xy.XYPlot;
-import com.androidplot.xy.XYSeries;
 
-import java.lang.ref.WeakReference;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 
 
 public class MainActivity extends AppCompatActivity {
-
     private static boolean prepared = false;
     private static PendingIntent pendingIntent;
     private static NfcAdapter nfcAdapter;
     private static Tag tag;
     private static String tech;
-    private static Button start;
-    private static Button stop;
-    private static Button changePage;
-    private static ECGModel ecgSeries1;
-    private static ECGModel ecgSeries2;
-    private static XYPlot xyPlot1;
-    private static XYPlot xyPlot2;
-    private static TextView temperature;
-    private static Redrawer redrawer1;
-    private static Redrawer redrawer2;
+    private static DynamicSeries rtd1;
+    private static DynamicSeries rtd2;
     //nfc读写协议，按列表排序有限使用
     private final String[] nfcTechList = {
             "android.nfc.tech.NfcV",
@@ -54,11 +46,19 @@ public class MainActivity extends AppCompatActivity {
             "android.nfc.tech.NfcF",
     };
     private final Handler handler = new Handler();
+    private TextView temperature;
+    private XYPlot xyPlot1;
+    private XYPlot xyPlot2;
+    private Button start;
+    private Button stop;
+    private int count;
     private final Runnable runnable = new Runnable() {
+        @SuppressLint("SetTextI18n")
         @Override
         public void run() {
             int refreshTime = 100;       //ms
             if (!prepared) {
+                handler.postDelayed(this, refreshTime);
                 return;
             }
             //要做的事情，这里再次调用此Runnable对象，以实现定时器操作
@@ -67,58 +67,55 @@ public class MainActivity extends AppCompatActivity {
             if (readData == null || readData.equals("null")) {
                 System.out.println("null");
                 handler.removeCallbacks(runnable);
+                reset();
                 return;
             }
+            String[] stringData = StringHandler.hexToUtf8(readData).split(",");
+            temperature.setText(stringData[0].substring(2) + "°C");
+            rtd1.update(count, Double.parseDouble(stringData[1]));
+            rtd2.update(count, Double.parseDouble(stringData[2]));
+            plotDynamic(rtd1, rtd2);
+            count++;
+            count = count % rtd1.size();
             //textView.setText(textView.getText() + "\n" + readData);
             handler.postDelayed(this, refreshTime);
         }
     };
 
-    //选择对应协议读取，按前设列表优选
-    private static String readNfc(String tech, Tag tag) {
-        switch (tech) {
-            case "android.nfc.tech.IsoDep":
-                return NfcReader.readIsoDep(tag);
-            case "android.nfc.tech.NfcA":
-                return NfcReader.readNfcA(tag);
-            case "android.nfc.tech.NfcB":
-                return NfcReader.readNfcB(tag);
-            case "android.nfc.tech.NfcF":
-                return NfcReader.readNfcF(tag);
-            case "android.nfc.tech.NfcV":
-                return NfcReader.readNfcV(tag);
-            case "android.nfc.tech.Ndef":
-                return NfcReader.readNdef(tag);
-            case "android.nfc.tech.NdefFormatable":
-                return NfcReader.readNdefFormatable(tag);
-            case "android.nfc.tech.MifareUltralight":
-                return NfcReader.readMifareUltralight(tag);
-            case "android.nfc.tech.MifareClassic":
-                return NfcReader.readMifareClassic(tag);
-        }
-        return null;
-    }
-
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //初始化变量
+        count = 0;
+        int size = 11;
+        rtd1 = new DynamicSeries(size, "RTD 1");
+        rtd2 = new DynamicSeries(size, "RTD 2");
 
         //初始化基本控件
         temperature = findViewById(R.id.temperature);
         start = findViewById(R.id.start);
         stop = findViewById(R.id.stop);
         stop.setClickable(false);
+        stop.setBackgroundColor(Color.GRAY);
 
         start.setOnClickListener(view -> {
             start.setClickable(false);
+            start.setBackgroundColor(Color.GRAY);
+
             stop.setClickable(true);
+            stop.setBackgroundColor(Color.rgb(255, 0, 0));
             prepared = true;
         });
 
         stop.setOnClickListener(view -> {
             stop.setClickable(false);
-            stop.setClickable(true);
+            stop.setBackgroundColor(Color.GRAY);
+
+            start.setClickable(true);
+            start.setBackgroundColor(Color.rgb(37, 86, 234));
             prepared = false;
+            reset();
         });
 
         //初始化NFC检测事件
@@ -133,13 +130,14 @@ public class MainActivity extends AppCompatActivity {
 
         //调试界面跳转按钮
         //测试阶段保留
-        changePage = findViewById(R.id.changePage);
+        Button changePage = findViewById(R.id.changePage);
         changePage.setOnClickListener(view -> {
             Intent intent = new Intent(MainActivity.this, SecondActivity.class);
             // start the activity connect to the specified class
             startActivity(intent);
         });
 
+        //初始化绘图控件
         xyPlot1 = findViewById(R.id.plot1);
         xyPlot2 = findViewById(R.id.plot2);
 
@@ -147,35 +145,25 @@ public class MainActivity extends AppCompatActivity {
         Paint backgroundPaint = new Paint();
         backgroundPaint.setColor(Color.WHITE);
         backgroundPaint.setStyle(Paint.Style.FILL);
+
         xyPlot1.getGraph().setBackgroundPaint(backgroundPaint);
+        xyPlot1.getGraph().getLineLabelStyle(XYGraphWidget.Edge.BOTTOM).setFormat(new DecimalFormat("0"));
+        xyPlot1.getGraph().getLineLabelStyle(XYGraphWidget.Edge.LEFT).setFormat(new DecimalFormat("0"));
+        xyPlot1.setDomainStepMode(StepMode.INCREMENT_BY_VAL);
+        xyPlot1.setDomainStepValue(1);
+        xyPlot1.setRangeBoundaries(0, 100, BoundaryMode.FIXED);
+        xyPlot1.setDomainBoundaries(0, 10, BoundaryMode.FIXED);
+
+
         xyPlot2.getGraph().setBackgroundPaint(backgroundPaint);
+        xyPlot2.getGraph().getLineLabelStyle(XYGraphWidget.Edge.BOTTOM).setFormat(new DecimalFormat("0"));
+        xyPlot2.getGraph().getLineLabelStyle(XYGraphWidget.Edge.LEFT).setFormat(new DecimalFormat("0"));
+        xyPlot2.setDomainStepMode(StepMode.INCREMENT_BY_VAL);
+        xyPlot2.setDomainStepValue(1);
+        xyPlot2.setRangeBoundaries(0, 100, BoundaryMode.FIXED);
+        xyPlot2.setDomainBoundaries(0, 10, BoundaryMode.FIXED);
 
-        //ECG随机数发生器，用于测试实时数据的绘图
-        ecgSeries1 = new ECGModel(1000, 200);
-        ecgSeries2 = new ECGModel(1000, 200);
 
-        MyFadeFormatter formatter = new MyFadeFormatter(1000);
-        formatter.setLegendIconEnabled(false);
-
-        xyPlot1.addSeries(ecgSeries1, formatter);
-        xyPlot1.setRangeBoundaries(0, 10, BoundaryMode.FIXED);
-        xyPlot1.setDomainBoundaries(0, 1000, BoundaryMode.FIXED);
-
-        // reduce the number of range labels
-        xyPlot1.setLinesPerRangeLabel(3);
-
-        xyPlot2.addSeries(ecgSeries2, formatter);
-        xyPlot2.setRangeBoundaries(0, 10, BoundaryMode.FIXED);
-        xyPlot2.setDomainBoundaries(0, 1000, BoundaryMode.FIXED);
-
-        xyPlot2.setLinesPerRangeLabel(3);
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        redrawer1.finish();
-        redrawer2.finish();
     }
 
     //NFC探测事件
@@ -184,10 +172,6 @@ public class MainActivity extends AppCompatActivity {
         super.onNewIntent(intent);
         System.out.println("On New Intent.");
         System.out.println(intent.getAction());
-        if (!prepared) {
-            System.out.println("Cancel");
-            return;
-        }
         if (NfcAdapter.ACTION_TECH_DISCOVERED.equals(intent.getAction())
                 || NfcAdapter.ACTION_TAG_DISCOVERED.equals(intent.getAction())
                 || NfcAdapter.ACTION_NDEF_DISCOVERED.equals(intent.getAction())) {
@@ -203,7 +187,6 @@ public class MainActivity extends AppCompatActivity {
 
                 if (!oldId.equals(newId)) {
                     System.out.println("Different Card.");
-                    //textView.setText("");
                     tag = newtag;
                 } else {
                     System.out.println(oldId + '\t' + newId);
@@ -211,14 +194,9 @@ public class MainActivity extends AppCompatActivity {
                 }
             } else {
                 tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
-                //textView.setText("");
             }
             processIntent(tag);
-            ecgSeries1.start(new WeakReference<>(xyPlot2.getRenderer(AdvancedLineAndPointRenderer.class)));
-            ecgSeries2.start(new WeakReference<>(xyPlot2.getRenderer(AdvancedLineAndPointRenderer.class)));
-            redrawer1 = new Redrawer(xyPlot1, 30, true);
-            redrawer2 = new Redrawer(xyPlot2, 30, true);
-            //handler.postDelayed(runnable, 1000);
+            handler.postDelayed(runnable, 1000);
         }
     }
 
@@ -244,7 +222,7 @@ public class MainActivity extends AppCompatActivity {
     //首次读取
     private void processIntent(Tag tag) {
         String[] techlist = tag.getTechList();
-        String readData = "";
+        //String readData = "";
         boolean decodeable = false;
         //检测支持协议
         for (String tech : nfcTechList) {
@@ -252,7 +230,7 @@ public class MainActivity extends AppCompatActivity {
                 MainActivity.tech = tech;
                 decodeable = true;
                 userToast(tech);
-                readData = readNfc(tech, tag);
+                //readData = readNfc(tech, tag);
                 //textView.setText(textView.getText() + "\n" + readData);
                 break;
             }
@@ -266,151 +244,57 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    //选择对应协议读取，按前设列表优选
+    public String readNfc(String tech, Tag tag) {
+        switch (tech) {
+            case "android.nfc.tech.IsoDep":
+                return NfcReader.readIsoDep(tag);
+            case "android.nfc.tech.NfcA":
+                return NfcReader.readNfcA(tag);
+            case "android.nfc.tech.NfcB":
+                return NfcReader.readNfcB(tag);
+            case "android.nfc.tech.NfcF":
+                return NfcReader.readNfcF(tag);
+            case "android.nfc.tech.NfcV":
+                return NfcReader.readNfcV(tag);
+            case "android.nfc.tech.Ndef":
+                return NfcReader.readNdef(tag);
+            case "android.nfc.tech.NdefFormatable":
+                return NfcReader.readNdefFormatable(tag);
+            case "android.nfc.tech.MifareUltralight":
+                return NfcReader.readMifareUltralight(tag);
+            case "android.nfc.tech.MifareClassic":
+                return NfcReader.readMifareClassic(tag);
+        }
+        return null;
+    }
+
+    public void reset() {
+        rtd1.clear();
+        rtd2.clear();
+        plotDynamic(rtd1, rtd2);
+        temperature.setText("--");
+        count = 0;
+    }
+
+    public void plotDynamic(DynamicSeries dynamicSeries1, DynamicSeries dynamicSeries2) {
+        LineAndPointFormatter formatter1 = new LineAndPointFormatter(Color.GREEN, null, null, null);
+        formatter1.getLinePaint().setStrokeJoin(Paint.Join.ROUND);
+        formatter1.getLinePaint().setStrokeWidth(10);
+
+        xyPlot1.addSeries(dynamicSeries1, formatter1);
+        xyPlot1.redraw();
+
+        LineAndPointFormatter formatter2 = new LineAndPointFormatter(Color.RED, null, null, null);
+        formatter2.getLinePaint().setStrokeJoin(Paint.Join.ROUND);
+        formatter2.getLinePaint().setStrokeWidth(10);
+
+        xyPlot2.addSeries(dynamicSeries2, formatter2);
+        xyPlot2.redraw();
+    }
+
     //显示消息
     private void userToast(String src) {
         Toast.makeText(this, src, Toast.LENGTH_SHORT).show();
-    }
-
-    /**
-     * Special {@link AdvancedLineAndPointRenderer.Formatter} that draws a line
-     * that fades over time.  Designed to be used in conjunction with a circular buffer model.
-     */
-    public static class MyFadeFormatter extends AdvancedLineAndPointRenderer.Formatter {
-
-        private final int trailSize;
-
-        MyFadeFormatter(int trailSize) {
-            this.trailSize = trailSize;
-        }
-
-        @Override
-        public Paint getLinePaint(int thisIndex, int latestIndex, int seriesSize) {
-            // offset from the latest index:
-            int offset;
-            if (thisIndex > latestIndex) {
-                offset = latestIndex + (seriesSize - thisIndex);
-            } else {
-                offset = latestIndex - thisIndex;
-            }
-
-            float scale = 255f / trailSize;
-            int alpha = (int) (255 - (offset * scale));
-            getLinePaint().setAlpha(Math.max(alpha, 0));
-            return getLinePaint();
-        }
-    }
-
-    /**
-     * Primitive simulation of some kind of signal.  For this example,
-     * we'll pretend its an ecg.  This class represents the data as a circular buffer;
-     * data is added sequentially from left to right.  When the end of the buffer is reached,
-     * i is reset back to 0 and simulated sampling continues.
-     */
-    public static class ECGModel implements XYSeries {
-
-        //private final Number[] data;
-        private final Number[] realTimeData1;
-        private final Number[] realTimeData2;
-        private final long delayMs;
-        private final int blipInteral;
-        private final Thread thread;
-        private boolean keepRunning;
-        private int latestIndex;
-
-        private WeakReference<AdvancedLineAndPointRenderer> rendererRef;
-
-        /**
-         * @param size         Sample size contained within this model
-         * @param updateFreqHz Frequency at which new samples are added to the model
-         */
-        ECGModel(int size, int updateFreqHz) {
-            //data = new Number[size];
-            realTimeData1 = new Number[size];
-            realTimeData2 = new Number[size];
-
-            //Arrays.fill(data, 0);
-            Arrays.fill(realTimeData1, 0);
-            Arrays.fill(realTimeData2, 0);
-
-            // translate hz into delay (ms):
-            delayMs = 1000 / updateFreqHz;
-
-            // add 7 "blips" into the signal:
-            blipInteral = size / 7;
-
-            thread = new Thread(() -> {
-                try {
-                    while (keepRunning) {
-
-                        //重写0-data.length这段数据
-                        if (latestIndex >= realTimeData1.length) {
-                            latestIndex = 0;
-                        }
-
-                        //理想读取结果    Temperature,20,RTD1,0,RTD2,0
-                        //或者            20,0,0
-                        //否则还需要编写StringHandler
-                        try {
-                            //System.out.println(tech);
-                            String readData = readNfc(tech, tag);
-                            if (!prepared || readData == null || readData.equals("null")) {
-                                //System.out.println("null");
-                                continue;
-                            }
-
-                            temperature.setText(readData.split(",")[0]);
-                            realTimeData1[latestIndex] = Float.valueOf(readData.split(",")[1]);
-                            realTimeData2[latestIndex] = Float.valueOf(readData.split(",")[2]);
-                        } catch (Exception e) {
-                            e.getStackTrace();
-                            continue;
-                        }
-
-                        if (latestIndex < realTimeData1.length - 1) {
-                            // null out the point immediately following i, to disable
-                            // connecting i and i+1 with a line:
-                            realTimeData1[latestIndex + 1] = null;
-                            realTimeData2[latestIndex + 1] = null;
-                        }
-
-                        if (rendererRef.get() != null) {
-                            rendererRef.get().setLatestIndex(latestIndex);
-                            Thread.sleep(delayMs);
-                        } else {
-                            keepRunning = false;
-                        }
-                        latestIndex++;
-                    }
-                } catch (InterruptedException e) {
-                    keepRunning = false;
-                }
-            });
-        }
-
-        void start(final WeakReference<AdvancedLineAndPointRenderer> rendererRef) {
-            this.rendererRef = rendererRef;
-            keepRunning = true;
-            thread.start();
-        }
-
-        @Override
-        public int size() {
-            return realTimeData1.length;
-        }
-
-        @Override
-        public Number getX(int index) {
-            return index;
-        }
-
-        @Override
-        public Number getY(int index) {
-            return realTimeData1[index];
-        }
-
-        @Override
-        public String getTitle() {
-            return "Signal";
-        }
     }
 }
