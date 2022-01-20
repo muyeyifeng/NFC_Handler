@@ -50,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
     private static DynamicSeries rtd1;
     private static DynamicSeries rtd2;
     //nfc读写协议，按列表排序有限使用
-    private final String[] nfcTechList = {
+    private final String[] nfcTechList= {
             "android.nfc.tech.NfcV",
             "android.nfc.tech.Ndef",
             "android.nfc.tech.MifareClassic",
@@ -81,8 +81,8 @@ public class MainActivity extends AppCompatActivity {
             String readData = readNfc(tech, tag);
             if (readData == null || readData.equals("null")) {
                 System.out.println("null");
+                pause();
                 handler.removeCallbacks(runnable);
-                reset();
                 return;
             }
             String[] stringData = StringHandler.hexToUtf8(readData).split(",");
@@ -92,7 +92,6 @@ public class MainActivity extends AppCompatActivity {
             plotDynamic(rtd1, rtd2);
             count++;
             count = count % rtd1.size();
-            //textView.setText(textView.getText() + "\n" + readData);
             handler.postDelayed(this, refreshTime);
         }
     };
@@ -100,85 +99,11 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        //初始化变量
-        count = 0;
-        int size = 11;
-        rtd1 = new DynamicSeries(size, "RTD 1");
-        rtd2 = new DynamicSeries(size, "RTD 2");
-
-        //初始化基本控件
-        temperature = findViewById(R.id.temperature);
-        start = findViewById(R.id.start);
-        stop = findViewById(R.id.stop);
-        stop.setClickable(false);
-        stop.setBackgroundColor(Color.GRAY);
-
-        start.setOnClickListener(view -> {
-            start.setClickable(false);
-            start.setBackgroundColor(Color.GRAY);
-
-            stop.setClickable(true);
-            stop.setBackgroundColor(Color.rgb(255, 0, 0));
-            prepared = true;
-        });
-
-        stop.setOnClickListener(view -> {
-            stop.setClickable(false);
-            stop.setBackgroundColor(Color.GRAY);
-
-            start.setClickable(true);
-            start.setBackgroundColor(Color.rgb(37, 86, 234));
-            prepared = false;
-            reset();
-        });
-
-        //初始化NFC检测事件
-        nfcAdapter = NfcAdapter.getDefaultAdapter(this);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            pendingIntent = PendingIntent.getActivity(this, 0,
-                    new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), PendingIntent.FLAG_MUTABLE);
-        } else {
-            pendingIntent = PendingIntent.getActivity(this, 0,
-                    new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
-        }
-
-        //调试界面跳转按钮
-        //测试阶段保留
-        Button changePage = findViewById(R.id.changePage);
-        changePage.setOnClickListener(view -> {
-            Intent intent = new Intent(MainActivity.this, SecondActivity.class);
-            // start the activity connect to the specified class
-            startActivity(intent);
-        });
-
-        //初始化绘图控件
-        xyPlot1 = findViewById(R.id.plot1);
-        xyPlot2 = findViewById(R.id.plot2);
-
-        //调整绘图背景
-        Paint backgroundPaint = new Paint();
-        backgroundPaint.setColor(Color.WHITE);
-        backgroundPaint.setStyle(Paint.Style.FILL);
-
-        xyPlot1.getGraph().setBackgroundPaint(backgroundPaint);
-        xyPlot1.getGraph().getLineLabelStyle(XYGraphWidget.Edge.BOTTOM).setFormat(new DecimalFormat("0"));
-        xyPlot1.getGraph().getLineLabelStyle(XYGraphWidget.Edge.LEFT).setFormat(new DecimalFormat("0"));
-        xyPlot1.setDomainStepMode(StepMode.INCREMENT_BY_VAL);
-        xyPlot1.setDomainStepValue(1);
-        xyPlot1.setRangeBoundaries(0, 100, BoundaryMode.FIXED);
-        xyPlot1.setDomainBoundaries(0, 10, BoundaryMode.FIXED);
-
-
-        xyPlot2.getGraph().setBackgroundPaint(backgroundPaint);
-        xyPlot2.getGraph().getLineLabelStyle(XYGraphWidget.Edge.BOTTOM).setFormat(new DecimalFormat("0"));
-        xyPlot2.getGraph().getLineLabelStyle(XYGraphWidget.Edge.LEFT).setFormat(new DecimalFormat("0"));
-        xyPlot2.setDomainStepMode(StepMode.INCREMENT_BY_VAL);
-        xyPlot2.setDomainStepValue(1);
-        xyPlot2.setRangeBoundaries(0, 100, BoundaryMode.FIXED);
-        xyPlot2.setDomainBoundaries(0, 10, BoundaryMode.FIXED);
-
-
+        initVar();
+        initWegit();
+        initEvent();
+        initPlot();
+        initDebug();
     }
 
     //NFC探测事件
@@ -202,6 +127,7 @@ public class MainActivity extends AppCompatActivity {
 
                 if (!oldId.equals(newId)) {
                     System.out.println("Different Card.");
+                    reset();
                     tag = newtag;
                 } else {
                     System.out.println(oldId + '\t' + newId);
@@ -234,10 +160,96 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    //初始化全局变量
+    public void initVar(){
+        count = 0;
+        int size = 11;
+        rtd1 = new DynamicSeries(size, "RTD 1");
+        rtd2 = new DynamicSeries(size, "RTD 2");
+    }
+
+    //初始化控件
+    public void initWegit(){
+        temperature = findViewById(R.id.temperature);
+        start = findViewById(R.id.start);
+        stop = findViewById(R.id.stop);
+        stop.setClickable(false);
+        stop.setBackgroundColor(Color.GRAY);
+
+        start.setOnClickListener(view -> {
+            start.setClickable(false);
+            start.setBackgroundColor(Color.GRAY);
+
+            stop.setClickable(true);
+            stop.setBackgroundColor(Color.rgb(255, 0, 0));
+            prepared = true;
+        });
+
+        stop.setOnClickListener(view -> {
+            stop.setClickable(false);
+            stop.setBackgroundColor(Color.GRAY);
+
+            start.setClickable(true);
+            start.setBackgroundColor(Color.rgb(37, 86, 234));
+            prepared = false;
+            reset();
+        });
+    }
+
+    //定义NFC事件
+    public void initEvent(){
+        nfcAdapter = NfcAdapter.getDefaultAdapter(this);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            pendingIntent = PendingIntent.getActivity(this, 0,
+                    new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), PendingIntent.FLAG_MUTABLE);
+        } else {
+            pendingIntent = PendingIntent.getActivity(this, 0,
+                    new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
+        }
+    }
+
+    //初始化绘图参数
+    public void initPlot(){
+        //初始化绘图控件
+        xyPlot1 = findViewById(R.id.plot1);
+        xyPlot2 = findViewById(R.id.plot2);
+
+        //调整绘图背景
+        Paint backgroundPaint = new Paint();
+        backgroundPaint.setColor(Color.WHITE);
+        backgroundPaint.setStyle(Paint.Style.FILL);
+
+        xyPlot1.getGraph().setBackgroundPaint(backgroundPaint);
+        xyPlot1.getGraph().getLineLabelStyle(XYGraphWidget.Edge.BOTTOM).setFormat(new DecimalFormat("0"));
+        xyPlot1.getGraph().getLineLabelStyle(XYGraphWidget.Edge.LEFT).setFormat(new DecimalFormat("0"));
+        xyPlot1.setDomainStepMode(StepMode.INCREMENT_BY_VAL);
+        xyPlot1.setDomainStepValue(1);
+        xyPlot1.setRangeBoundaries(0, 100, BoundaryMode.FIXED);
+        xyPlot1.setDomainBoundaries(0, 10, BoundaryMode.FIXED);
+
+        xyPlot2.getGraph().setBackgroundPaint(backgroundPaint);
+        xyPlot2.getGraph().getLineLabelStyle(XYGraphWidget.Edge.BOTTOM).setFormat(new DecimalFormat("0"));
+        xyPlot2.getGraph().getLineLabelStyle(XYGraphWidget.Edge.LEFT).setFormat(new DecimalFormat("0"));
+        xyPlot2.setDomainStepMode(StepMode.INCREMENT_BY_VAL);
+        xyPlot2.setDomainStepValue(1);
+        xyPlot2.setRangeBoundaries(0, 100, BoundaryMode.FIXED);
+        xyPlot2.setDomainBoundaries(0, 10, BoundaryMode.FIXED);
+    }
+
+    //debug界面跳转
+    public void initDebug(){
+        //测试阶段保留
+        Button changePage = findViewById(R.id.changePage);
+        changePage.setOnClickListener(view -> {
+            Intent intent = new Intent(MainActivity.this, SecondActivity.class);
+            // start the activity connect to the specified class
+            startActivity(intent);
+        });
+    }
+
     //首次读取
     private void processIntent(Tag tag) {
         String[] techlist = tag.getTechList();
-        //String readData = "";
         boolean decodeable = false;
         //检测支持协议
         for (String tech : nfcTechList) {
@@ -245,8 +257,6 @@ public class MainActivity extends AppCompatActivity {
                 MainActivity.tech = tech;
                 decodeable = true;
                 userToast(tech);
-                //readData = readNfc(tech, tag);
-                //textView.setText(textView.getText() + "\n" + readData);
                 break;
             }
         }
@@ -284,6 +294,12 @@ public class MainActivity extends AppCompatActivity {
         return null;
     }
 
+    //暂停读取
+    public void pause() {
+        prepared=false;
+    }
+
+    //重置图表
     public void reset() {
         rtd1.clear();
         rtd2.clear();
@@ -292,6 +308,7 @@ public class MainActivity extends AppCompatActivity {
         count = 0;
     }
 
+    //绘制图表
     public void plotDynamic(DynamicSeries dynamicSeries1, DynamicSeries dynamicSeries2) {
         LineAndPointFormatter formatter1 = new LineAndPointFormatter(Color.GREEN, null, null, null);
         formatter1.getLinePaint().setStrokeJoin(Paint.Join.ROUND);
