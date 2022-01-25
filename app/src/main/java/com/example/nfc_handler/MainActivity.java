@@ -50,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
     private static DynamicSeries rtd1;
     private static DynamicSeries rtd2;
     //nfc读写协议，按列表排序有限使用
-    private final String[] nfcTechList= {
+    private final String[] nfcTechList = {
             "android.nfc.tech.NfcV",
             "android.nfc.tech.Ndef",
             "android.nfc.tech.MifareClassic",
@@ -77,21 +77,26 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             //要做的事情，这里再次调用此Runnable对象，以实现定时器操作
-            System.out.println(tech);
-            String readData = readNfc(tech, tag);
-            if (readData == null || readData.equals("null")) {
-                System.out.println("null");
-                pause();
-                handler.removeCallbacks(runnable);
-                return;
+            try {
+                System.out.println(tech);
+                String readData = readNfc(tech, tag);
+                if (readData == null || readData.equals("null")) {
+                    System.out.println("null");
+                    pause();
+                    handler.removeCallbacks(runnable);
+                    return;
+                }
+                String[] stringData = StringHandler.hexToUtf8(readData).split(",");
+                temperature.setText(stringData[0].substring(2) + "°C");
+                rtd1.update(count, Double.parseDouble(stringData[1]));
+                rtd2.update(count, Double.parseDouble(stringData[2]));
+                plotDynamic(rtd1, rtd2);
+                count++;
+                count = count % rtd1.size();
+
+            } catch (Exception e) {
+                userToast("Error data", Toast.LENGTH_SHORT);
             }
-            String[] stringData = StringHandler.hexToUtf8(readData).split(",");
-            temperature.setText(stringData[0].substring(2) + "°C");
-            rtd1.update(count, Double.parseDouble(stringData[1]));
-            rtd2.update(count, Double.parseDouble(stringData[2]));
-            plotDynamic(rtd1, rtd2);
-            count++;
-            count = count % rtd1.size();
             handler.postDelayed(this, refreshTime);
         }
     };
@@ -130,6 +135,7 @@ public class MainActivity extends AppCompatActivity {
                     reset();
                     tag = newtag;
                 } else {
+                    resume();
                     System.out.println(oldId + '\t' + newId);
                     System.out.println("Same Card.");
                 }
@@ -161,7 +167,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //初始化全局变量
-    public void initVar(){
+    public void initVar() {
         count = 0;
         int size = 11;
         rtd1 = new DynamicSeries(size, "RTD 1");
@@ -169,7 +175,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //初始化控件
-    public void initWegit(){
+    public void initWegit() {
         temperature = findViewById(R.id.temperature);
         start = findViewById(R.id.start);
         stop = findViewById(R.id.stop);
@@ -197,7 +203,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //定义NFC事件
-    public void initEvent(){
+    public void initEvent() {
         nfcAdapter = NfcAdapter.getDefaultAdapter(this);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             pendingIntent = PendingIntent.getActivity(this, 0,
@@ -209,7 +215,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //初始化绘图参数
-    public void initPlot(){
+    public void initPlot() {
         //初始化绘图控件
         xyPlot1 = findViewById(R.id.plot1);
         xyPlot2 = findViewById(R.id.plot2);
@@ -237,7 +243,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //debug界面跳转
-    public void initDebug(){
+    public void initDebug() {
         //测试阶段保留
         Button changePage = findViewById(R.id.changePage);
         changePage.setOnClickListener(view -> {
@@ -256,17 +262,19 @@ public class MainActivity extends AppCompatActivity {
             if (Arrays.asList(techlist).contains(tech)) {
                 MainActivity.tech = tech;
                 decodeable = true;
-                userToast(tech);
+                //userToast(tech);
                 break;
             }
         }
 
+        /*
         //NFC是否可读
         if (decodeable) {
             userToast("success.");
         } else {
             userToast("fail.");
         }
+        */
     }
 
     //选择对应协议读取，按前设列表优选
@@ -296,16 +304,25 @@ public class MainActivity extends AppCompatActivity {
 
     //暂停读取
     public void pause() {
-        prepared=false;
+        userToast("Detach", Toast.LENGTH_SHORT);
+        prepared = false;
+    }
+
+    //继续读取
+    public void resume() {
+        userToast("Resume", Toast.LENGTH_SHORT);
+        prepared = true;
     }
 
     //重置图表
     public void reset() {
+
         rtd1.clear();
         rtd2.clear();
         plotDynamic(rtd1, rtd2);
         temperature.setText("--");
         count = 0;
+        userToast("Stop and clear", Toast.LENGTH_SHORT);
     }
 
     //绘制图表
@@ -326,7 +343,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     //显示消息
-    private void userToast(String src) {
-        Toast.makeText(this, src, Toast.LENGTH_SHORT).show();
+    private void userToast(String src, int type) {
+        Toast.makeText(this, src, type).show();
     }
 }

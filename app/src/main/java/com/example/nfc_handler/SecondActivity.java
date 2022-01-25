@@ -57,12 +57,18 @@ public class SecondActivity extends AppCompatActivity {
             //要做的事情，这里再次调用此Runnable对象，以实现定时器操作
             System.out.println(tech);
             String readData = readNfc(tech, tag);
-            if (readData == null || readData.equals("null")) {
-                System.out.println("null");
-                handler.removeCallbacks(runnable);
-                return;
+            try {
+                if (readData == null || readData.equals("null")) {
+                    System.out.println("null");
+                    handler.removeCallbacks(runnable);
+                    return;
+                }
+                String stringdata = StringHandler.hexToUtf8(readData);
+                textView.setText(textView.getText() + "\n" + stringdata);
+            } catch (Exception e) {
+                userToast("Error data", Toast.LENGTH_SHORT);
+                textView.setText(textView.getText() + "\n" + readData);
             }
-            textView.setText(textView.getText() + "\n" + readData);
             handler.postDelayed(this, refreshTime);
         }
     };
@@ -89,7 +95,7 @@ public class SecondActivity extends AppCompatActivity {
         button = findViewById(R.id.clear_text);
         button.setOnClickListener(view -> {
             textView.setText("");
-            techSupport.setText("");
+            //techSupport.setText("");
         });
     }
 
@@ -190,23 +196,30 @@ public class SecondActivity extends AppCompatActivity {
             if (Arrays.asList(techlist).contains(tech)) {
                 this.tech = tech;
                 decodeable = true;
-                userToast(tech);
+                //userToast(tech);
                 readData = readNfc(tech, tag);
-                textView.setText(textView.getText() + "\n" + readData);
+                try {
+                    String stringdata = StringHandler.hexToUtf8(readData);
+                    textView.setText(textView.getText() + "\n" + stringdata);
+                } catch (Exception e) {
+                    userToast("Error data", Toast.LENGTH_SHORT);
+                    textView.setText(textView.getText() + "\n" + readData);
+                }
                 break;
             }
         }
-
+        /*
         //NFC是否可读
         if (decodeable) {
             userToast("success.");
         } else {
             userToast("fail.");
         }
+         */
     }
 
     //显示消息
-    private void userToast(String src) {
-        Toast.makeText(this, src, Toast.LENGTH_SHORT).show();
+    private void userToast(String src, int type) {
+        Toast.makeText(this, src, type).show();
     }
 }
