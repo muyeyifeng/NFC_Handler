@@ -93,10 +93,11 @@ public class StringHandler {
     }
 
     public static String hexToUtf8(String hex) {
-        int beginIndex = 22;
-        String endSymbol = "fe000000";
+        int beginIndex = 22;                                                                        //需要根据实际的情况修改
+        
+        String endSymbol = "fe000000";                                                              //刚好填充block的情况下没有fe000000
         int endIndex = hex.indexOf(endSymbol);
-        hex = hex.substring(beginIndex, endIndex).replaceAll("(0)+$", ""); //完善为最后偶数个0
+        hex = hex.substring(beginIndex, endIndex).replaceAll("(0)+$", "");        //完善为最后偶数个0
         byte[] byteArr = new byte[hex.length() / 2];
         for (int i = 0; i < hex.length() / 2; i++) {
             String output = hex.substring(i * 2, i * 2 + 2);
