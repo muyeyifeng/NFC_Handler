@@ -19,6 +19,8 @@ import android.nfc.NdefRecord;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Dictionary;
+import java.util.Enumeration;
 import java.util.Objects;
 
 public class StringHandler {
@@ -92,19 +94,27 @@ public class StringHandler {
         }
     }
 
-    public static String hexToUtf8(String hex) {
-        int beginIndex = 22;                                                                        //需要根据实际的情况修改
-        
-        String endSymbol = "fe000000";                                                              //刚好填充block的情况下没有fe000000
-        int endIndex = hex.indexOf(endSymbol);
-        hex = hex.substring(beginIndex, endIndex).replaceAll("(0)+$", "");        //完善为最后偶数个0
-        byte[] byteArr = new byte[hex.length() / 2];
-        for (int i = 0; i < hex.length() / 2; i++) {
-            String output = hex.substring(i * 2, i * 2 + 2);
-            Integer hexInt = Integer.decode("0x" + output);
-            byteArr[i] = hexInt.byteValue();
-        }
-        //System.out.println(finalString);
-        return new String(byteArr, StandardCharsets.UTF_8);
+    public static double[] hexToUtf8(String hex) {
+        if(hex.length()!=1024)
+            return null;
+        int len=128;    //只需要读取前128字节
+        double[] tempandadc= new double[2*len/8];
+
+        hex=hex.substring(0,len);
+            for (int i = 0; i < len; i += 8) {
+                String hTemp = hex.substring(i, i + 4);
+                String hADC = hex.substring(i + 4, i + 8);
+                byte bTemph = (byte) Integer.parseInt(hTemp.substring(0, 2), 16);
+                byte bTempl = (byte) Integer.parseInt(hTemp.substring(2, 4), 16);
+                byte bADCh = (byte) Integer.parseInt(hADC.substring(0, 2), 16);
+                byte bADCl = (byte) Integer.parseInt(hADC.substring(2, 4), 16);
+                double dTemp = (int) ((bTemph << 8) | (0x00FF & bTempl)) / 256.0 + 40;
+                double dADC = (int) ((bADCh << 8) | (0x00FF & bADCl)) * 3.3 / 4096;
+                //System.out.println(dADC + dTemp);
+                tempandadc[i/4]=dTemp;
+                tempandadc[i/4+1]=dADC;
+            }
+
+        return tempandadc;
     }
 }

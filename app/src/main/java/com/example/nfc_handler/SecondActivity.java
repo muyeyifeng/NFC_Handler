@@ -35,13 +35,6 @@ public class SecondActivity extends AppCompatActivity {
     //nfc读写协议，按列表排序有限使用
     private final String[] nfcTechList = {
             "android.nfc.tech.NfcV",
-            "android.nfc.tech.Ndef",
-            "android.nfc.tech.MifareClassic",
-            "android.nfc.tech.MifareUltralight",
-            "android.nfc.tech.NdefFormatable",
-            "android.nfc.tech.NfcA",
-            "android.nfc.tech.NfcB",
-            "android.nfc.tech.NfcF",
     };
     private final Handler handler = new Handler();
     private Button button;
@@ -50,29 +43,44 @@ public class SecondActivity extends AppCompatActivity {
     private NfcAdapter nfcAdapter;
     private Tag tag;
     private String tech;
+    private String oldStr=null;
+
+    /*
     Runnable runnable = new Runnable() {
         @Override
         public void run() {
-            int refreshTime = 100;       //ms
+            int refreshTime = 1000;       //ms
             //要做的事情，这里再次调用此Runnable对象，以实现定时器操作
             System.out.println(tech);
             String readData = readNfc(tech, tag);
             try {
+                //读取失败或数据为空
                 if (readData == null || readData.equals("null")) {
                     System.out.println("null");
                     handler.removeCallbacks(runnable);
                     return;
                 }
-                String stringdata = StringHandler.hexToUtf8(readData);
-                textView.setText(textView.getText() + "\n" + stringdata);
+
+                //数据内容是否改变
+                if(oldStr.equals(readData))
+                    System.out.println("Unchange");
+                else {
+                    String stringdata = StringHandler.hexToUtf8(readData);
+                    System.out.println(stringdata);
+                    oldStr=readData;
+                }
+
+
+                //textView.setText(textView.getText() + "\n" + stringdata);
             } catch (Exception e) {
-                userToast("Error data", Toast.LENGTH_SHORT);
-                textView.setText(textView.getText() + "\n" + readData);
+                //userToast("Error data", Toast.LENGTH_SHORT);
+                //System.out.println(readData);
+                //textView.setText(textView.getText() + "\n" + readData);
             }
-            handler.postDelayed(this, refreshTime);
+            //handler.postDelayed(this, refreshTime);
         }
     };
-
+    */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -93,10 +101,7 @@ public class SecondActivity extends AppCompatActivity {
         techSupport.setMovementMethod(ScrollingMovementMethod.getInstance());
 
         button = findViewById(R.id.clear_text);
-        button.setOnClickListener(view -> {
-            textView.setText("");
-            //techSupport.setText("");
-        });
+        button.setOnClickListener(view -> textView.setText(""));
     }
 
     //NFC探测事件
@@ -125,13 +130,14 @@ public class SecondActivity extends AppCompatActivity {
                 } else {
                     System.out.println(oldId + '\t' + newId);
                     System.out.println("Same Card.");
+                    tag = newtag;
                 }
             } else {
                 tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
                 textView.setText("");
             }
             processIntent(tag);
-            handler.postDelayed(runnable, 1000);
+            //handler.postDelayed(runnable, 1000);
         }
     }
 
@@ -157,26 +163,11 @@ public class SecondActivity extends AppCompatActivity {
     //选择对应协议读取，按前设列表优选
     private String readNfc(String tech, Tag tag) {
         switch (tech) {
-            case "android.nfc.tech.IsoDep":
-                return NfcReader.readIsoDep(tag);
-            case "android.nfc.tech.NfcA":
-                return NfcReader.readNfcA(tag);
-            case "android.nfc.tech.NfcB":
-                return NfcReader.readNfcB(tag);
-            case "android.nfc.tech.NfcF":
-                return NfcReader.readNfcF(tag);
             case "android.nfc.tech.NfcV":
                 return NfcReader.readNfcV(tag);
-            case "android.nfc.tech.Ndef":
-                return NfcReader.readNdef(tag);
-            case "android.nfc.tech.NdefFormatable":
-                return NfcReader.readNdefFormatable(tag);
-            case "android.nfc.tech.MifareUltralight":
-                return NfcReader.readMifareUltralight(tag);
-            case "android.nfc.tech.MifareClassic":
-                return NfcReader.readMifareClassic(tag);
+            default:
+                return null;
         }
-        return null;
     }
 
     //首次读取
@@ -189,7 +180,6 @@ public class SecondActivity extends AppCompatActivity {
         }
         techSupport.setText(stringBuilder.toString());
 
-        String readData;
         boolean decodeable = false;
         //检测支持协议
         for (String tech : nfcTechList) {
@@ -197,27 +187,25 @@ public class SecondActivity extends AppCompatActivity {
                 this.tech = tech;
                 decodeable = true;
                 //userToast(tech);
-                readData = readNfc(tech, tag);
+                String readData = readNfc(tech, tag);
+                if(oldStr!=null && !oldStr.equals(readData))
+                    oldStr = readData;
                 try {
-                    String stringdata = StringHandler.hexToUtf8(readData);
-                    textView.setText(textView.getText() + "\n" + stringdata);
+                    System.out.println(readData);
+                    double []tempandvolte = StringHandler.hexToUtf8(readData);
+                    StringBuilder tmp=new StringBuilder();
+                    for(int i=0;i<tempandvolte.length;i+=2)
+                    {
+                        tmp.append(tempandvolte[i]).append("°C\t\t").append(tempandvolte[i+1]).append("V\n");
+                    }
+                    textView.setText(tmp.toString());
                 } catch (Exception e) {
                     userToast("Error data", Toast.LENGTH_SHORT);
-                    textView.setText(textView.getText() + "\n" + readData);
                 }
                 break;
             }
         }
-        /*
-        //NFC是否可读
-        if (decodeable) {
-            userToast("success.");
-        } else {
-            userToast("fail.");
-        }
-         */
     }
-
     //显示消息
     private void userToast(String src, int type) {
         Toast.makeText(this, src, type).show();

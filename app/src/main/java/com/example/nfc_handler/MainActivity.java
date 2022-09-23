@@ -52,13 +52,6 @@ public class MainActivity extends AppCompatActivity {
     //nfc读写协议，按列表排序有限使用
     private final String[] nfcTechList = {
             "android.nfc.tech.NfcV",
-            "android.nfc.tech.Ndef",
-            "android.nfc.tech.MifareClassic",
-            "android.nfc.tech.MifareUltralight",
-            "android.nfc.tech.NdefFormatable",
-            "android.nfc.tech.NfcA",
-            "android.nfc.tech.NfcB",
-            "android.nfc.tech.NfcF",
     };
     private final Handler handler = new Handler();
     private TextView temperature;
@@ -66,12 +59,17 @@ public class MainActivity extends AppCompatActivity {
     private XYPlot xyPlot2;
     private Button start;
     private Button stop;
-    private int count;
+
+    private double[] rtd1values;
+    private double[] rtd2values;
+    private int size = 16;
+
+    /*
     private final Runnable runnable = new Runnable() {
         @SuppressLint("SetTextI18n")
         @Override
         public void run() {
-            int refreshTime = 100;       //ms
+            int refreshTime = 1000;       //ms
             if (!prepared) {
                 handler.postDelayed(this, refreshTime);
                 return;
@@ -93,14 +91,13 @@ public class MainActivity extends AppCompatActivity {
                 plotDynamic(rtd1, rtd2);
                 count++;
                 count = count % rtd1.size();
-
             } catch (Exception e) {
                 userToast("Error data", Toast.LENGTH_SHORT);
             }
             handler.postDelayed(this, refreshTime);
         }
     };
-
+*/
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -143,7 +140,7 @@ public class MainActivity extends AppCompatActivity {
                 tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
             }
             processIntent(tag);
-            handler.postDelayed(runnable, 1000);
+            //handler.postDelayed(runnable, 1000);
         }
     }
 
@@ -168,8 +165,13 @@ public class MainActivity extends AppCompatActivity {
 
     //初始化全局变量
     public void initVar() {
-        count = 0;
-        int size = 11;
+
+        rtd1values=new double[size];
+        rtd2values=new double[size];
+        for(int i=0;i<size;i++) {
+            rtd1values[i] = -273.15;
+            rtd2values[i] = -3.3;
+        }
         rtd1 = new DynamicSeries(size, "RTD 1");
         rtd2 = new DynamicSeries(size, "RTD 2");
     }
@@ -230,16 +232,18 @@ public class MainActivity extends AppCompatActivity {
         xyPlot1.getGraph().getLineLabelStyle(XYGraphWidget.Edge.LEFT).setFormat(new DecimalFormat("0"));
         xyPlot1.setDomainStepMode(StepMode.INCREMENT_BY_VAL);
         xyPlot1.setDomainStepValue(1);
-        xyPlot1.setRangeBoundaries(0, 100, BoundaryMode.FIXED);
-        xyPlot1.setDomainBoundaries(0, 10, BoundaryMode.FIXED);
+        xyPlot1.setRangeLabel("Temperature/°C");
+        xyPlot1.setRangeBoundaries(20, 40, BoundaryMode.FIXED);
+        xyPlot1.setDomainBoundaries(0, 15, BoundaryMode.FIXED);
 
         xyPlot2.getGraph().setBackgroundPaint(backgroundPaint);
         xyPlot2.getGraph().getLineLabelStyle(XYGraphWidget.Edge.BOTTOM).setFormat(new DecimalFormat("0"));
-        xyPlot2.getGraph().getLineLabelStyle(XYGraphWidget.Edge.LEFT).setFormat(new DecimalFormat("0"));
+        xyPlot2.getGraph().getLineLabelStyle(XYGraphWidget.Edge.LEFT).setFormat(new DecimalFormat("0.0"));
         xyPlot2.setDomainStepMode(StepMode.INCREMENT_BY_VAL);
         xyPlot2.setDomainStepValue(1);
-        xyPlot2.setRangeBoundaries(0, 100, BoundaryMode.FIXED);
-        xyPlot2.setDomainBoundaries(0, 10, BoundaryMode.FIXED);
+        xyPlot2.setRangeLabel("Volte/V");
+        xyPlot2.setRangeBoundaries(0, 3.3, BoundaryMode.FIXED);
+        xyPlot2.setDomainBoundaries(0, 15, BoundaryMode.FIXED);
     }
 
     //debug界面跳转
@@ -256,50 +260,62 @@ public class MainActivity extends AppCompatActivity {
     //首次读取
     private void processIntent(Tag tag) {
         String[] techlist = tag.getTechList();
-        boolean decodeable = false;
+        StringBuilder stringBuilder = new StringBuilder(NfcReader.readId(tag.getId()));
+        stringBuilder.insert(0, "ID: ").append('\n');
+        for (String techspt : techlist) {
+            stringBuilder.append(techspt).append('\n');
+        }
         //检测支持协议
         for (String tech : nfcTechList) {
             if (Arrays.asList(techlist).contains(tech)) {
                 MainActivity.tech = tech;
-                decodeable = true;
-                //userToast(tech);
+                String readData = readNfc(tech, tag);
+                if(readData==null||!prepared)
+                    break;
+                try {
+                    double []tempandvolte = StringHandler.hexToUtf8(readData);
+                    temperature.setText((int)(tempandvolte[0]*10)/10.0 + "°C");
+                    for(int i=rtd1values.length-1;i>0;i--){
+                        rtd1values[i]=rtd1values[i-1];
+                        rtd2values[i]=rtd2values[i-1];
+                    }
+                    rtd1values[0]=tempandvolte[0];
+                    rtd2values[0]=tempandvolte[1];
+                    for (int i=0;i<rtd1values.length;i++)
+                    {
+                        rtd1.update(i, rtd1values[i]);
+                        rtd2.update(i, rtd2values[i]);
+                        System.out.println(rtd2values[i]);
+                    }
+                    plotDynamic(rtd1, rtd2);
+                    /*
+                    for(int i=0;i<tempandvolte.length;i+=2)
+                    {
+                        rtd1.update(count, tempandvolte[i]);
+                        rtd2.update(count, tempandvolte[i+1]);
+
+                        plotDynamic(rtd1, rtd2);
+                        count++;
+                        count = count % rtd1.size();
+                        temperature.setText(String.valueOf(tempandvolte[i])+"°C");
+                    }
+                    */
+                } catch (Exception e) {
+                    userToast("Error data", Toast.LENGTH_SHORT);
+                }
                 break;
             }
         }
-
-        /*
-        //NFC是否可读
-        if (decodeable) {
-            userToast("success.");
-        } else {
-            userToast("fail.");
-        }
-        */
     }
 
-    //选择对应协议读取，按前设列表优选
+    //读取NfcV协议
     public String readNfc(String tech, Tag tag) {
         switch (tech) {
-            case "android.nfc.tech.IsoDep":
-                return NfcReader.readIsoDep(tag);
-            case "android.nfc.tech.NfcA":
-                return NfcReader.readNfcA(tag);
-            case "android.nfc.tech.NfcB":
-                return NfcReader.readNfcB(tag);
-            case "android.nfc.tech.NfcF":
-                return NfcReader.readNfcF(tag);
             case "android.nfc.tech.NfcV":
                 return NfcReader.readNfcV(tag);
-            case "android.nfc.tech.Ndef":
-                return NfcReader.readNdef(tag);
-            case "android.nfc.tech.NdefFormatable":
-                return NfcReader.readNdefFormatable(tag);
-            case "android.nfc.tech.MifareUltralight":
-                return NfcReader.readMifareUltralight(tag);
-            case "android.nfc.tech.MifareClassic":
-                return NfcReader.readMifareClassic(tag);
+            default:
+                return null;
         }
-        return null;
     }
 
     //暂停读取
@@ -310,18 +326,20 @@ public class MainActivity extends AppCompatActivity {
 
     //继续读取
     public void resume() {
-        userToast("Resume", Toast.LENGTH_SHORT);
-        prepared = true;
+        //userToast("Resume", Toast.LENGTH_SHORT);
+        //prepared = true;
     }
 
     //重置图表
     public void reset() {
-
+        for(int i=0;i<size;i++) {
+            rtd1values[i] = -273.15;
+            rtd2values[i] = -3.3;
+        }
         rtd1.clear();
         rtd2.clear();
         plotDynamic(rtd1, rtd2);
         temperature.setText("--");
-        count = 0;
         userToast("Stop and clear", Toast.LENGTH_SHORT);
     }
 

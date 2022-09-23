@@ -23,7 +23,7 @@ public class NfcVUtil {
     /**
      * 取得标签信息
      */
-    public static byte[] getInfoRmation(NfcV mNfcV) throws IOException {
+    public static byte[] getInfoRation(NfcV mNfcV) throws IOException {
         byte[] cmd = new byte[10];
         cmd[0] = (byte) 0x22; // flag
         cmd[1] = (byte) 0x2B; // command
